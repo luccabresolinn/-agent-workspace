@@ -1,6 +1,11 @@
-# agent-workspace — v2.9.2
+# agent-workspace — v2.9.3
 Agente autônomo de navegador (Playwright + Chrome via CDP) controlado por
 Telegram, com o Muse Spark (via OpenCode) decidindo as ações em loop ReAct.
+
+> **Plataforma suportada:** Windows exclusivamente (decisão do operador).
+> O agente usa Chrome via CDP, perfil local e caminhos `C:\` como premissas;
+> testes automatizados também rodam em Linux, mas nenhum outro SO é suportado
+> para operação.
 
 ## Quickstart (Windows)
 ```powershell

@@ -163,6 +163,11 @@ class Orchestrator:
                     "tool": spec.name, "why": why[:150]})
             return f"NEGADO: {why}."
         if verdict == "APPROVE":
+            # FIX v2.9.3: `_operation_sig` não existia neste escopo (NameError em
+            # qualquer operação de escrita no modo supervisionado). Usa a mesma
+            # função de assinatura aplicada ao journal logo abaixo — garante que
+            # o sig aprovado é idêntico ao sig registrado e revalidado.
+            from tools.permissions import operation_sig as _operation_sig
             sig = _operation_sig(spec.name, args.model_dump())
             if sig not in task_ctx.get("approved_sigs", set()):
                 if _auto:
