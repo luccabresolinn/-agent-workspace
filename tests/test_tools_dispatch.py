@@ -318,3 +318,36 @@ class TestDispatch(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestWriteRegression(unittest.TestCase):
+    """Regressão v2.9.3: fs.write_file em modo supervisionado causava
+    NameError (`_operation_sig` inexistente) no caminho APPROVE->HITL."""
+
+    def test_supervised_write_hitl_ok(self):
+        tmp = tempfile.mkdtemp()
+        deep = os.path.join(tmp, "escopo", "sub")  # profundidade >=2 p/ validate_root
+        os.makedirs(deep)
+        target = os.path.join(deep, "hitl_write_probe.txt")
+
+        async def go():
+            actions = [A("tool", tool="fs.write_file",
+                         args={"path": target, "content": "oi"}),
+                       A("finish", reason="fim")]
+            async with Ctx(actions, root=deep) as c:
+                orch = Orchestrator()
+                res = await orch.run_task("escreva um arquivo",
+                                          on_progress=c.prog,
+                                          on_confirm=c.confirm_yes,
+                                          task_id="w1", actor="u")
+                return res, c
+        try:
+            res, c = asyncio.run(go())
+            self.assertNotIn("NameError", str(res.message))
+            self.assertGreaterEqual(c.confirms, 1)  # HITL acionado (nível C)
+            self.assertTrue(os.path.isfile(target))  # escrita efetivou
+            with open(target, encoding="utf-8") as f:
+                self.assertEqual(f.read(), "oi")
+        finally:
+            import shutil
+            shutil.rmtree(tmp, ignore_errors=True)

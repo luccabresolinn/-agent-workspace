@@ -11,7 +11,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQu
 from config.settings import settings
 from core.orchestrator import Orchestrator
 
-VERSION = "2.9.2"
+VERSION = "2.9.3"
 
 orch = Orchestrator()
 task_queue: asyncio.Queue = asyncio.Queue(maxsize=settings.QUEUE_MAX)

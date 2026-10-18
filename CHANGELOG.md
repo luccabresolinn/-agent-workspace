@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.9.3 — Correções da fase 2 (Windows como plataforma-alvo)
+- **BUG CRÍTICO corrigido**: `NameError: _operation_sig` em `core/orchestrator.py`
+  quebrava TODA operação local de escrita (nível C/D, caminho HITL) no modo
+  supervisionado. Agora usa `tools.permissions.operation_sig` — a mesma função
+  que gera a assinatura do journal, garantindo sig aprovado == sig registrado.
+- Teste de regressão adicionado (`TestWriteRegression`): fs.write_file ponta a
+  ponta com aprovação simulada, verificando arquivo escrito e HITL acionado.
+- `validate_root` agora é portável: regras calibradas para Windows continuam
+  idênticas (drive raiz/raso/sistema/perfil/repo negados); caminhos POSIX
+  (usados por testes/ferramentas) deixaram de ser barrados por contagem de
+  componentes pensada só para "C:\". Teste `test_grant_flow_confirm` verde.
+- Prompts alinhados ao schema: BASE_PROMPT e AUTO_PROMPT passam a listar os
+  mesmos 12 action_types de `core.schemas.ActionType` (scroll/select/reload
+  eram descritos no corpo mas omitidos na lista; ask_user/tool harmonizados).
+- Documentação: suporte oficial restrito a Windows (decisão do operador).
+
 ## 2.9.2 — Reconciliação com a reauditoria (Achados A–C + T3–T9)
 - Q-03 real: dias SOMENTE via `dias=N`; numéricos soltos viram finalidade
 - Q-04: `create(validate=True)`; repo cross-drive sem ValueError

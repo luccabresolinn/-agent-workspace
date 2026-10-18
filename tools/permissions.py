@@ -96,15 +96,33 @@ def validate_root(path: str, project_root: str | None = None) -> str:
     # Raiz de drive: C:\ → dirname == ele mesmo
     if os.path.dirname(real) == real:
         raise PathDenied("raiz de drive não pode ser concedida")
-    parts = [p.lower() for p in real.replace("/", os.sep).split(os.sep) if p]
-    # Profundidade mínima: ao menos 2 níveis (ex.: C:\\Users\\x OK; C:\\dados NÃO)
-    if len(parts) < 3:  # ['c:', ...] conta o drive
-        raise PathDenied("escopo muito amplo (mínimo 2 níveis abaixo do drive)")
-    sysdirs = {"windows", "program files", "program files (x86)", "programdata"}
-    if parts[1] in sysdirs if len(parts) > 1 else False:
+    norm = real.replace("\\", "/")
+    parts_all = [p.lower() for p in norm.split("/") if p]
+    if not parts_all:
+        raise PathDenied("escopo muito amplo (raiz de sistema)")
+    first = parts_all[0]
+    is_windows_path = (len(first) == 2 and first[1] == ":") or first == "c:"
+    if is_windows_path:
+        # Formato Windows: ['c:', 'users', 'x', ...] — exige 2 níveis abaixo do drive.
+        parts = parts_all
+        min_depth = 3
+        users_names = ("users",)
+        profile_depth = 3
+    else:
+        # POSIX (apenas para testes/ferramentas fora do alvo suportado):
+        # '/tmp/x' -> ['tmp','x'] exige 2 níveis abaixo da raiz.
+        parts = parts_all
+        min_depth = 2
+        users_names = ("users", "home")
+        profile_depth = 2
+    if len(parts) < min_depth:
+        raise PathDenied("escopo muito amplo (mínimo 2 níveis abaixo da raiz)")
+    sysdirs = {"windows", "program files", "program files (x86)", "programdata",
+               "etc", "usr", "bin", "sbin", "var", "root", "boot", "dev", "sys", "proc"}
+    if len(parts) > 1 and parts[1] in sysdirs:
         raise PathDenied("diretório de sistema protegido")
-    # Raiz do perfil do usuário sem subdiretório (C:\Users\<nome> puro)
-    if len(parts) == 3 and parts[1] in ("users", "home"):
+    # Raiz do perfil do usuário sem subdiretório (C:\Users\<nome> ou /home/<nome>)
+    if len(parts) == profile_depth and parts[1] in users_names:
         raise PathDenied("raiz do perfil sem subdiretório")
     # Repo do próprio agente nunca é raiz concedível
     if project_root:
